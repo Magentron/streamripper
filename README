@@ -11,11 +11,12 @@ SYNOPSIS
 
 DESCRIPTION
        Streamripper records shoutcast and icecast compatible streams, in their
-       native format. The following formats are supported: mp3, nsv, aac, and
-       ogg. The meta data within the stream are interpreted to determine the
-       beginning and end of each song, and stores the songs on your hard disk
-       as individual files. In addition, streamripper includes a relay server
-       for listening to the station while you are recording.
+       native format. Both HTTP and HTTPS stream URLs are supported. The
+       following formats are supported: mp3, nsv, aac, and ogg. The meta data
+       within the stream are interpreted to determine the beginning and end of
+       each song, and stores the songs on your hard disk as individual files.
+       In addition, streamripper includes a relay server for listening to the
+       station while you are recording.
 
 
 OPTIONS
@@ -452,10 +453,15 @@ SPLITPOINT DETECTION
                  prepad    postpad
 
 USAGE EXAMPLES
-       Rip from a stream:
+       Rip from an HTTP stream:
 
 
-             streamripper URL
+             streamripper http://stream.example.com:8000/radio
+
+       Rip from an HTTPS stream:
+
+
+             streamripper https://stream.example.com/radio
 
        Rip from a stream for one hour:
 

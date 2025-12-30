@@ -175,10 +175,11 @@ fi
 AC_CHECK_HEADER([openssl/ssl.h], [],
   [AC_MSG_ERROR([OpenSSL headers not found])])
 
-# Check for OpenSSL library
-AC_CHECK_LIB([ssl], [SSL_library_init],
+# Check for OpenSSL library (use SSL_CTX_new which exists in all versions)
+AC_CHECK_LIB([ssl], [SSL_CTX_new],
   [],
-  [AC_MSG_ERROR([OpenSSL library not found])])
+  [AC_MSG_ERROR([OpenSSL library not found])],
+  [-lcrypto])
 
 # Optionally check for crypto library
 AC_CHECK_LIB([crypto], [EVP_DigestInit],

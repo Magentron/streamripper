@@ -72,12 +72,13 @@ create_and_connect_tcp_socket(int *sd, const char *host, int port) {
 }
 
 void https_init() {
-    // LibreSSL and older OpenSSL need explicit initialization
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    // OpenSSL 1.0.x needs explicit initialization
     SSL_library_init();
     SSL_load_error_strings();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();
 #endif
+    // OpenSSL 1.1.0+ auto-initializes
 }
 
 /*

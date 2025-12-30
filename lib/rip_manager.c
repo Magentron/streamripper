@@ -489,7 +489,7 @@ start_ripping(RIP_MANAGER_INFO *rmi) {
 	   check the environment variable */
 	if (!pproxy) {
 		char const *env_http_proxy = getenv("http_proxy");
-		if (env_http_proxy) {
+		if (env_http_proxy && env_http_proxy[0]) {
 			pproxy = env_http_proxy;
 			debug_printf("Getting proxy from $http_proxy: %s\n", pproxy);
 		}
