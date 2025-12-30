@@ -1,3 +1,7 @@
+New for 1.67.1
+------------------------------------
+* Add downstream patch to fix buffer size
+
 New for 1.67.0
 ------------------------------------
 * Add initial support for SSL/TLS

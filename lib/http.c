@@ -59,7 +59,7 @@ http_sc_connect(
     SR_HTTP_HEADER *info,
     const char *useragent,
     const char *if_name) {
-	char headbuf[MAX_HEADER_LEN];
+	char headbuf[MAX_HEADER_LEN + MAX_HOST_LEN + SR_MAX_PATH];
 	URLINFO url_info;
 	int ret;
 

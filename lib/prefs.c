@@ -55,12 +55,13 @@ static const char* prefs_version_strings[] = {
 			    Change splitpoint padding from 300 to 0. */
 	"1.66.0",
 	"1.67.0",
+	"1.67.1",
     0
 };
 /* clang-format on */
 
 /* Preference file versions */
-#define PREFS_VERSION_CURRENT "1.67.0"
+#define PREFS_VERSION_CURRENT "1.67.1"
 
 /******************************************************************************
  * Private function protoypes
