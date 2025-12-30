@@ -18,6 +18,7 @@ SET (STREAMRIPPER_LIB_SRC
 	findsep.c findsep.h
 	findsep2.c
 	http.c http.h
+	https.c https.h
 	iconvert.c
 	mchar.c mchar.h
 	parse.c parse.h

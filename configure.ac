@@ -10,8 +10,8 @@ dnl   AC_CHECK_LIB:   prepends the library to LIBS
 dnl   AC_CHECK_FUNC:  defines a shell variable
 
 AC_PREREQ(2.59)
-AC_INIT(streamripper,1.66.0-alpha)
-AM_INIT_AUTOMAKE
+AC_INIT(streamripper,1.67.0)
+AM_INIT_AUTOMAKE([foreign])
 
 AC_CONFIG_HEADERS([lib/config.h])
 
@@ -156,6 +156,34 @@ dnl -------- Check for iconv & related
 AM_ICONV
 AM_LANGINFO_CODESET
 SR_FIND_LOCALE_CHARSET
+
+dnl -------- Check for OpenSSL support
+# Add --with-openssl option
+AC_ARG_WITH([openssl],
+  [AS_HELP_STRING([--with-openssl=PATH],
+                  [Specify prefix where OpenSSL is installed])],
+  [openssl_path="$withval"],
+  [openssl_path=""])
+
+# If given, adjust CPPFLAGS and LDFLAGS
+if test "x$openssl_path" != "x"; then
+  CPPFLAGS="$CPPFLAGS -I$openssl_path/include"
+  LDFLAGS="$LDFLAGS -L$openssl_path/lib"
+fi
+
+# Check for OpenSSL headers
+AC_CHECK_HEADER([openssl/ssl.h], [],
+  [AC_MSG_ERROR([OpenSSL headers not found])])
+
+# Check for OpenSSL library
+AC_CHECK_LIB([ssl], [SSL_library_init],
+  [],
+  [AC_MSG_ERROR([OpenSSL library not found])])
+
+# Optionally check for crypto library
+AC_CHECK_LIB([crypto], [EVP_DigestInit],
+  [],
+  [AC_MSG_ERROR([OpenSSL crypto library not found])])
 
 dnl -------- Check for wchar support
 dnl  This is will be used and updated in the regex test below

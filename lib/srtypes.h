@@ -38,6 +38,10 @@
 #endif
 #endif
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/bio.h>
+
 #if HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
@@ -488,11 +492,24 @@ struct global_prefs {
 	WSTREAMRIPPER_PREFS wstreamripper_prefs; // prefs for winamp plugin
 };
 
+/*
+ * The data structure for an HTTPS stream connection.
+ * It holds both the socket file descriptor and the SSL object.
+ * This is similar to the s_sc_data structure used for HTTP.
+ */
+typedef struct HTTPS_DATAst HTTPS_DATA;
+struct HTTPS_DATAst {
+    int sd;         // The socket descriptor
+    SSL *ssl;       // The SSL session object
+    BIO *bio;       // The BIO object for I/O
+};
+
 typedef struct RIP_MANAGER_INFOst RIP_MANAGER_INFO;
 typedef void (*RIP_MANAGER_CALLBACK)(
     RIP_MANAGER_INFO *rmi, int message, void *data);
 struct RIP_MANAGER_INFOst {
 	STREAM_PREFS *prefs;
+	HTTPS_DATA *https_data;
 	char streamname[MAX_STREAMNAME_LEN];
 	char server_name[MAX_SERVER_LEN];
 	u_long filesize;

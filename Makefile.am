@@ -337,6 +337,8 @@ lib_manifest = \
 	lib/findsep.h \
 	lib/http.c \
 	lib/http.h \
+	lib/https.c \
+	lib/https.h \
 	lib/iconvert.c \
 	lib/ictest.c \
 	lib/list.h \

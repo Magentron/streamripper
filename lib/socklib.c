@@ -102,7 +102,7 @@ read_interface(char *if_name, uint32_t *addr) {
  */
 error_code
 socklib_open(
-    HSOCKET *socket_handle, char *host, int port, char *if_name, int timeout) {
+    HSOCKET *socket_handle, const char *host, int port, const char *if_name, int timeout) {
 	int rc;
 	struct sockaddr_in address, local;
 	struct hostent *hp;

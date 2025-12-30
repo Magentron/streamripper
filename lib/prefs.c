@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "http.h"
 #include "mchar.h"
 #include "prefs.h"
 #include "rip_manager.h"
@@ -53,12 +54,13 @@ static const char* prefs_version_strings[] = {
 			    to iso-8859-1
 			    Change splitpoint padding from 300 to 0. */
 	"1.66.0",
+	"1.67.0",
     0
 };
 /* clang-format on */
 
 /* Preference file versions */
-#define PREFS_VERSION_CURRENT "1.66.0-alpha"
+#define PREFS_VERSION_CURRENT "1.67.0"
 
 /******************************************************************************
  * Private function protoypes
@@ -412,6 +414,13 @@ prefs_set_stream_prefs(STREAM_PREFS *prefs, char *label) {
 	}
 	prefs_set_stream_prefs_keyfile(prefs, 0, label);
 }
+
+
+bool
+prefs_is_https(GLOBAL_PREFS *global_prefs) {
+	return url_is_https(global_prefs->url);
+}
+
 
 /* GCS: This is not quite complete, missing splitting & codesets */
 void

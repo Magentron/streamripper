@@ -51,7 +51,8 @@ void freeargv(char **vector);
 
 /*  Routines imported from standard C runtime libraries. */
 
-#ifdef ANSI_PROTOTYPES
+//#ifdef ANSI_PROTOTYPES
+#if 1
 
 #include <stddef.h>
 #include <stdlib.h>

@@ -26,6 +26,7 @@ libstreamripper_a_SOURCES = \
 	findsep.c \
 	findsep2.c \
 	http.c \
+	https.c \
 	iconvert.c \
 	mchar.c \
 	parse.c \
@@ -47,7 +48,7 @@ libstreamripper_a_SOURCES = \
 	external.h \
 	filelib.h \
 	findsep.h \
-	http.h \
+	https.h \
 	list.h \
 	mchar.h \
 	parse.h \

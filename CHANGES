@@ -1,4 +1,8 @@
-New for 1.66.0-alpha
+New for 1.67.0
+------------------------------------
+* Add initial support for SSL/TLS
+
+New for 1.66.0
 ------------------------------------
 * Add flag --http10 to support streams that are not properly handled using
   HTTP/1.1

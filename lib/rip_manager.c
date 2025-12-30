@@ -48,6 +48,7 @@
 #include "filelib.h"
 #include "findsep.h"
 #include "http.h"
+#include "https.h"
 #include "mchar.h"
 #include "parse.h"
 #include "relaylib.h"
@@ -354,7 +355,7 @@ ripthread(void *thread_arg) {
 	/* Connect to remote server */
 	ret = start_ripping(rmi);
 	if (ret != SR_SUCCESS) {
-		debug_printf("Ripthread did start_ripping()\n");
+		debug_printf("Ripthread did start_ripping(), error %d\n", ret);
 		threadlib_signal_sem(&rmi->started_sem);
 		post_error(rmi, ret);
 		goto DONE;
@@ -362,7 +363,7 @@ ripthread(void *thread_arg) {
 
 	rmi->status_callback(rmi, RM_STARTED, (void *)NULL);
 	post_status(rmi, RM_STATUS_BUFFERING);
-	debug_printf("Ripthread did initialization\n");
+	debug_printf("Ripthread did initialization, error %d\n", ret);
 	threadlib_signal_sem(&rmi->started_sem);
 
 	while (TRUE) {
@@ -497,17 +498,33 @@ start_ripping(RIP_MANAGER_INFO *rmi) {
 	debug_printf("start_ripping: checkpoint 2\n");
 
 	/* Connect to the stream */
-	ret = http_sc_connect(
-	    rmi,
-	    &rmi->stream_sock,
-	    prefs->url,
-	    pproxy,
-	    &rmi->http_info,
-	    prefs->useragent,
-	    prefs->if_name);
-	if (ret != SR_SUCCESS) {
-		debug_printf("http_sc_connect() returned error\n");
-		goto RETURN_ERR;
+	if (rip_manager_is_https(rmi)) {
+		https_init();
+		ret = https_sc_connect(
+			rmi,
+			&rmi->https_data,
+			prefs->url,
+			pproxy,
+			&rmi->http_info,
+			prefs->useragent,
+			prefs->if_name);
+		if (ret != SR_SUCCESS) {
+			debug_printf("https_sc_connect() returned error %d\n", ret);
+			goto RETURN_ERR;
+		}
+	} else {
+		ret = http_sc_connect(
+			rmi,
+			&rmi->stream_sock,
+			prefs->url,
+			pproxy,
+			&rmi->http_info,
+			prefs->useragent,
+			prefs->if_name);
+		if (ret != SR_SUCCESS) {
+			debug_printf("http_sc_connect() returned error %d\n", ret);
+			goto RETURN_ERR;
+		}
 	}
 
 	/* If the icy_name exists, but is empty, set to a bogus name so
@@ -542,7 +559,7 @@ start_ripping(RIP_MANAGER_INFO *rmi) {
 	    GET_DATE_STAMP(rmi->prefs->flags),
 	    rmi->http_info.icy_name);
 	if (ret != SR_SUCCESS) {
-		debug_printf("filelib_init() returned error\n");
+		debug_printf("filelib_init() returned error %d\n", ret);
 		goto RETURN_ERR;
 	}
 
@@ -622,4 +639,9 @@ string_to_overwrite_opt(char *str) {
 const char *
 overwrite_opt_to_string(enum OverwriteOpt oo) {
 	return overwrite_opt_strings[(int)oo];
+}
+
+bool
+rip_manager_is_https(RIP_MANAGER_INFO *rmi) {
+	return url_is_https(rmi->prefs->url);
 }

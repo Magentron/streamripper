@@ -17,7 +17,6 @@
 #include "debug.h"
 #include "mchar.h" /* for substrn_until, etc. */
 #include "socklib.h"
-#include "srtypes.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +37,7 @@ static error_code http_get_sc_header(
     const char *url,
     HSOCKET *sock,
     SR_HTTP_HEADER *info);
-static error_code http_parse_url(const char *url, URLINFO *urlinfo);
+/* http_parse_url is non-static, declared in http.h */
 
 /******************************************************************************
  * Private Vars
@@ -58,8 +57,8 @@ http_sc_connect(
     const char *url,
     const char *proxyurl,
     SR_HTTP_HEADER *info,
-    char *useragent,
-    char *if_name) {
+    const char *useragent,
+    const char *if_name) {
 	char headbuf[MAX_HEADER_LEN];
 	URLINFO url_info;
 	int ret;
@@ -104,13 +103,22 @@ http_sc_connect(
 		}
 
 		debug_printf("http_sc_connect(): calling http_get_sc_header\n");
-		if ((ret = http_get_sc_header(rmi, url, sock, info)) != SR_SUCCESS)
+		if ((ret = http_get_sc_header(rmi, url, sock, info)) != SR_SUCCESS) {
 			return ret;
+		}
 
 		if (*info->http_location) {
 			/* RECURSIVE CASE */
 			debug_printf("Redirecting: %s\n", info->http_location);
 			url = info->http_location;
+			if ((ret = http_parse_url(url, &url_info)) != SR_SUCCESS) {
+				return ret;
+			}
+
+			if (url_is_https(url)) {
+				return SR_ERROR_HTTPS_REDIRECT;
+			}
+
 			return http_sc_connect(
 			    rmi,
 			    sock,
@@ -125,6 +133,11 @@ http_sc_connect(
 	}
 
 	return SR_SUCCESS;
+}
+
+bool
+url_is_https(const char *url) {
+	return strncasecmp(url, "https://", 8) == 0;
 }
 
 /******************************************************************************
@@ -154,12 +167,18 @@ unescape_pct_encoding(char *s) {
  * Parse's a url as in http://host:port/path or host/path, etc..
  * and now http://username:password@server:4480
  */
-static error_code
+error_code
 http_parse_url(const char *url, URLINFO *urlinfo) {
 	int ret;
 	char *s;
+	int default_port = 80;
 
 	debug_printf("http_parse_url: %s\n", url);
+
+	/* Check for https:// and set default port accordingly */
+	if (strncasecmp(url, "https://", 8) == 0) {
+		default_port = 443;
+	}
 
 	/* if we have a proto, just skip it. should we care about
 	   the proto? like fail if it's not http? */
@@ -203,7 +222,7 @@ http_parse_url(const char *url, URLINFO *urlinfo) {
 		ret -= 1;
 	} else {
 		debug_printf("Branch 2 (%s)\n", url);
-		urlinfo->port = 80;
+		urlinfo->port = default_port;
 		ret = sscanf(url, "%511[^/]/%252s", urlinfo->host, urlinfo->path + 1);
 	}
 	if (ret < 1)
@@ -218,7 +237,7 @@ http_construct_sc_request(
     const char *url,
     const char *proxyurl,
     char *buffer,
-    char *useragent) {
+    const char *useragent) {
 	int ret;
 	URLINFO ui;
 	URLINFO proxyui;

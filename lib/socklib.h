@@ -10,7 +10,7 @@
 
 error_code socklib_init();
 error_code socklib_open(
-    HSOCKET *socket_handle, char *host, int port, char *if_name, int timeout);
+    HSOCKET *socket_handle, const char *host, int port, const char *if_name, int timeout);
 void socklib_close(HSOCKET *socket_handle);
 void socklib_cleanup();
 error_code socklib_read_header(

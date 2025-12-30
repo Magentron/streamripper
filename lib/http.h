@@ -11,7 +11,7 @@ error_code http_construct_sc_request(
     const char *url,
     const char *proxyurl,
     char *buffer,
-    char *useragent);
+    const char *useragent);
 error_code
 http_construct_page_request(const char *url, BOOL proxyformat, char *buffer);
 error_code http_construct_sc_response(
@@ -28,7 +28,13 @@ error_code http_sc_connect(
     const char *url,
     const char *proxyurl,
     SR_HTTP_HEADER *info,
-    char *useragent,
-    char *if_name);
+    const char *useragent,
+    const char *if_name);
+
+bool
+url_is_https(const char *url);
+
+error_code
+http_parse_url(const char *url, URLINFO *urlinfo);
 
 #endif //__HTTP_H__

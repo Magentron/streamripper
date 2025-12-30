@@ -18,6 +18,7 @@
 #define __PREFS_H__
 
 #include <glib.h>
+#include <stdbool.h>
 
 #define DEFAULT_SKINFILE "srskin.bmp"
 
@@ -30,6 +31,7 @@ void prefs_get_stream_prefs(STREAM_PREFS *prefs, char *label);
 void prefs_set_stream_prefs(STREAM_PREFS *prefs, char *label);
 void prefs_get_wstreamripper_prefs(WSTREAMRIPPER_PREFS *wsr_prefs);
 void prefs_set_wstreamripper_prefs(WSTREAMRIPPER_PREFS *wsr_prefs);
+bool prefs_is_https(GLOBAL_PREFS *global_prefs);
 void debug_stream_prefs(STREAM_PREFS *prefs);
 
 #endif

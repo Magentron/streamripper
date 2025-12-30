@@ -36,6 +36,7 @@
 #include "ripstream.h"
 #include "socklib.h"
 #include "srtypes.h"
+#include "https.h"
 
 /*****************************************************************************
  * Private functions
@@ -734,7 +735,7 @@ write_id3v2_frame(
 	char bigbuf[HEADER_SIZE] = "";
 	ID3V2frame id3v2frame;
 #ifndef WIN32
-	__uint32_t framesize = 0;
+	uint32_t framesize = 0;
 #else
 	unsigned long int framesize = 0;
 #endif
@@ -1107,8 +1108,12 @@ compute_cbuf2_size(
 static int
 ripstream_recvall(RIP_MANAGER_INFO *rmi, char *buffer, int size) {
 	int ret;
-	ret = socklib_recvall(
-	    rmi, &rmi->stream_sock, buffer, size, rmi->prefs->timeout);
+	if (rmi->https_data && rmi->https_data->ssl) {
+		ret = https_sc_read_data(rmi->https_data, buffer, size);
+	} else {
+		ret = socklib_recvall(
+		    rmi, &rmi->stream_sock, buffer, size, rmi->prefs->timeout);
+	}
 	if (ret >= 0 && ret != size) {
 		debug_printf("rip_manager_recv: expected %d, got %d\n", size, ret);
 		ret = SR_ERROR_RECV_FAILED;

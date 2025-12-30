@@ -24,7 +24,7 @@
 #include "srtypes.h"
 
 // clang-format off
-#define SRVERSION	"1.66.0-alpha"
+#define SRVERSION	"1.67.0"
 
 #if defined (WIN32)
 #define SRPLATFORM      "windows"
@@ -99,6 +99,7 @@ error_code rip_manager_start(
     RIP_MANAGER_INFO **rmi,
     STREAM_PREFS *prefs,
     RIP_MANAGER_CALLBACK status_callback);
+bool rip_manager_is_https(RIP_MANAGER_INFO *rmi);
 void rip_manager_stop(RIP_MANAGER_INFO *rmi);
 void rip_manager_cleanup(void);
 error_code rip_manager_start_track(RIP_MANAGER_INFO *rmi, TRACK_INFO *ti);
