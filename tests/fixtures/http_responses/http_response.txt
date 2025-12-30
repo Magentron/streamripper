@@ -1,0 +1,6 @@
+HTTP/1.0 200 OK
+Content-Type: audio/mpeg
+icy-metaint: 16384
+icy-name: Another Test Station
+Server: Icecast 2.4.4
+

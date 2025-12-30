@@ -4,10 +4,22 @@ from glob import glob
 import os
 
 headers = (
-        '../lib/debug.h',
-        '../lib/mchar.h',
-        '../lib/socklib.h',
-        )
+    '../lib/debug.h',
+    '../lib/mchar.h',
+    '../lib/socklib.h',
+    '../lib/filelib.h',
+    '../lib/parse.h',
+    '../lib/prefs.h',
+    '../lib/external.h',
+    '../lib/relaylib.h',
+    '../lib/threadlib.h',
+    '../lib/errors.h',
+    '../lib/cbuf2.h',
+    '../lib/https.h',
+    '../lib/charset.h',
+    '../lib/utf8.h',
+    '../lib/findsep.h',
+)
 
 def create_mockup(header_fpath):
     subprocess.check_call(['ruby', '../vendor/cmock/lib/cmock.rb', '-ocmock_cfg.yml', header])
@@ -21,5 +33,4 @@ for file_to_remove in files_to_remove:
 # create new mockups
 for header in headers:
     create_mockup(header)
-
 

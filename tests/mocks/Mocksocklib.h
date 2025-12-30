@@ -29,8 +29,8 @@ void socklib_init_StubWithCallback(CMOCK_socklib_init_CALLBACK Callback);
 #define socklib_open_IgnoreAndReturn(cmock_retval) socklib_open_CMockIgnoreAndReturn(__LINE__, cmock_retval)
 void socklib_open_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, error_code cmock_to_return);
 #define socklib_open_ExpectAndReturn(socket_handle, host, port, if_name, timeout, cmock_retval) socklib_open_CMockExpectAndReturn(__LINE__, socket_handle, host, port, if_name, timeout, cmock_retval)
-void socklib_open_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, HSOCKET* socket_handle, char* host, int port, char* if_name, int timeout, error_code cmock_to_return);
-typedef error_code (* CMOCK_socklib_open_CALLBACK)(HSOCKET* socket_handle, char* host, int port, char* if_name, int timeout, int cmock_num_calls);
+void socklib_open_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, HSOCKET* socket_handle, const char* host, int port, const char* if_name, int timeout, error_code cmock_to_return);
+typedef error_code (* CMOCK_socklib_open_CALLBACK)(HSOCKET* socket_handle, const char* host, int port, const char* if_name, int timeout, int cmock_num_calls);
 void socklib_open_StubWithCallback(CMOCK_socklib_open_CALLBACK Callback);
 #define socklib_close_Ignore() socklib_close_CMockIgnore()
 void socklib_close_CMockIgnore(void);

@@ -1,0 +1,5 @@
+HTTP/1.1 302 Found
+Location: http://alternate.server.com:8000/stream
+Content-Type: text/html
+Server: nginx
+

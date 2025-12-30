@@ -1,0 +1,8 @@
+This is a dummy stream data file for E2E testing.
+It contains simple byte patterns that can be used to verify streaming functionality.
+The actual content doesn't need to be valid audio - it's just for testing the infrastructure.
+
+In production E2E tests, this file would contain actual MP3 frame data.
+For now, we use dummy data that the mock server can serve.
+
+=== Repeating pattern follows ===

@@ -404,3 +404,56 @@ cstreamripper_LDADD = \
 #        @CDK_LIBS@
 
 ACLOCAL_AMFLAGS = -I m4
+
+# =============================================================================
+# Test targets (Unity/CMock tests in tests/ directory)
+# =============================================================================
+
+TEST_BUILD_DIR = tests/build
+
+.PHONY: test test-build test-clean test-coverage test-unit test-integration test-e2e
+
+# Build and run all tests
+test t: test-build
+	@echo "Running all tests..."
+	cd $(TEST_BUILD_DIR) && ctest --output-on-failure
+
+# Build tests only (no run)
+test-build:
+	@echo "Building tests..."
+	@mkdir -p $(TEST_BUILD_DIR)
+	cd $(TEST_BUILD_DIR) && cmake .. && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
+# Run unit tests only
+test-unit: test-build
+	@echo "Running unit tests..."
+	cd $(TEST_BUILD_DIR) && ctest -R "test_" --output-on-failure
+
+# Run integration tests only
+test-integration: test-build
+	@echo "Running integration tests..."
+	cd $(TEST_BUILD_DIR) && ctest -R "integration_" --output-on-failure
+
+# Run e2e tests only
+test-e2e: test-build
+	@echo "Running e2e tests..."
+	cd $(TEST_BUILD_DIR) && ctest -R "e2e_" --output-on-failure
+
+# Build and run tests with coverage
+test-coverage coverage cover:
+	@echo "Building tests with coverage..."
+	@mkdir -p $(TEST_BUILD_DIR)
+	cd $(TEST_BUILD_DIR) && cmake -DENABLE_COVERAGE=ON .. && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+	@echo "Running tests..."
+	cd $(TEST_BUILD_DIR) && ctest --output-on-failure
+	@echo "Generating coverage report..."
+	cd $(TEST_BUILD_DIR) && $(MAKE) coverage
+	@echo "Coverage report: $(TEST_BUILD_DIR)/coverage_html/index.html"
+
+# Clean test build directory
+test-clean:
+	@echo "Cleaning test build directory..."
+	rm -rf $(TEST_BUILD_DIR)
+
+# Hook into automake's clean target
+clean-local: test-clean

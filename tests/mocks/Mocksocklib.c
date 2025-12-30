@@ -247,7 +247,7 @@ void socklib_init_StubWithCallback(CMOCK_socklib_init_CALLBACK Callback)
   Mock.socklib_init_CallbackFunctionPointer = Callback;
 }
 
-error_code socklib_open(HSOCKET* socket_handle, char* host, int port, char* if_name, int timeout)
+error_code socklib_open(HSOCKET* socket_handle, const char* host, int port, const char* if_name, int timeout)
 {
   UNITY_LINE_TYPE cmock_line = TEST_LINE_NUM;
   CMOCK_socklib_open_CALL_INSTANCE* cmock_call_instance = (CMOCK_socklib_open_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.socklib_open_CallInstance);
@@ -283,12 +283,12 @@ error_code socklib_open(HSOCKET* socket_handle, char* host, int port, char* if_n
   return cmock_call_instance->ReturnVal;
 }
 
-void CMockExpectParameters_socklib_open(CMOCK_socklib_open_CALL_INSTANCE* cmock_call_instance, HSOCKET* socket_handle, char* host, int port, char* if_name, int timeout)
+void CMockExpectParameters_socklib_open(CMOCK_socklib_open_CALL_INSTANCE* cmock_call_instance, HSOCKET* socket_handle, const char* host, int port, const char* if_name, int timeout)
 {
   cmock_call_instance->Expected_socket_handle = socket_handle;
-  cmock_call_instance->Expected_host = host;
+  cmock_call_instance->Expected_host = (char*)host;
   cmock_call_instance->Expected_port = port;
-  cmock_call_instance->Expected_if_name = if_name;
+  cmock_call_instance->Expected_if_name = (char*)if_name;
   cmock_call_instance->Expected_timeout = timeout;
 }
 
@@ -305,7 +305,7 @@ void socklib_open_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, error_code cm
   Mock.socklib_open_IgnoreBool = (int)1;
 }
 
-void socklib_open_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, HSOCKET* socket_handle, char* host, int port, char* if_name, int timeout, error_code cmock_to_return)
+void socklib_open_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, HSOCKET* socket_handle, const char* host, int port, const char* if_name, int timeout, error_code cmock_to_return)
 {
   CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_socklib_open_CALL_INSTANCE));
   CMOCK_socklib_open_CALL_INSTANCE* cmock_call_instance = (CMOCK_socklib_open_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
