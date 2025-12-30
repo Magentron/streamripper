@@ -1,7 +1,7 @@
 # libmad.list.  Generated from libmad.list.in by configure.
 
 # Directories...
-$prefix=/usr/local
+$prefix=/opt/local
 $exec_prefix=${prefix}
 $srcdir=.
 
