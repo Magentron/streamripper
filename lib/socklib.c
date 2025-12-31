@@ -82,7 +82,8 @@ read_interface(char *if_name, uint32_t *addr) {
 	memset(&ifr, 0, sizeof(struct ifreq));
 	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) >= 0) {
 		ifr.ifr_addr.sa_family = AF_INET;
-		strcpy(ifr.ifr_name, if_name);
+		strncpy(ifr.ifr_name, if_name, IFNAMSIZ - 1);
+		ifr.ifr_name[IFNAMSIZ - 1] = '\0';
 		if (ioctl(fd, SIOCGIFADDR, &ifr) == 0)
 			*addr = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 		else {

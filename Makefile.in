@@ -788,6 +788,11 @@ cstreamripper_LDADD = \
 
 #        @CDK_LIBS@
 ACLOCAL_AMFLAGS = -I m4
+
+# =============================================================================
+# Test targets (Unity/CMock tests in tests/ directory)
+# =============================================================================
+TEST_BUILD_DIR = tests/build
 all: all-recursive
 
 .SUFFIXES:
@@ -1359,7 +1364,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-local mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -1441,8 +1446,8 @@ uninstall-man: uninstall-man1
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
 	am--depfiles am--refresh check check-am clean \
-	clean-binPROGRAMS clean-cscope clean-generic cscope \
-	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
+	clean-binPROGRAMS clean-cscope clean-generic clean-local \
+	cscope cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
 	dist-bzip3 dist-gzip dist-lzip dist-shar dist-tarZ dist-xz \
 	dist-zip dist-zstd distcheck distclean distclean-compile \
 	distclean-generic distclean-tags distcleancheck distdir \
@@ -1460,6 +1465,53 @@ uninstall-man: uninstall-man1
 
 .PRECIOUS: Makefile
 
+
+.PHONY: test test-build test-clean test-coverage test-unit test-integration test-e2e
+
+# Build and run all tests
+test t: test-build
+	@echo "Running all tests..."
+	cd $(TEST_BUILD_DIR) && ctest --output-on-failure
+
+# Build tests only (no run)
+test-build:
+	@echo "Building tests..."
+	@mkdir -p $(TEST_BUILD_DIR)
+	cd $(TEST_BUILD_DIR) && cmake .. && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
+# Run unit tests only
+test-unit: test-build
+	@echo "Running unit tests..."
+	cd $(TEST_BUILD_DIR) && ctest -R "test_" --output-on-failure
+
+# Run integration tests only
+test-integration: test-build
+	@echo "Running integration tests..."
+	cd $(TEST_BUILD_DIR) && ctest -R "integration_" --output-on-failure
+
+# Run e2e tests only
+test-e2e: test-build
+	@echo "Running e2e tests..."
+	cd $(TEST_BUILD_DIR) && ctest -R "e2e_" --output-on-failure
+
+# Build and run tests with coverage
+test-coverage coverage cover:
+	@echo "Building tests with coverage..."
+	@mkdir -p $(TEST_BUILD_DIR)
+	cd $(TEST_BUILD_DIR) && cmake -DENABLE_COVERAGE=ON .. && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+	@echo "Running tests..."
+	cd $(TEST_BUILD_DIR) && ctest --output-on-failure
+	@echo "Generating coverage report..."
+	cd $(TEST_BUILD_DIR) && $(MAKE) coverage
+	@echo "Coverage report: $(TEST_BUILD_DIR)/coverage_html/index.html"
+
+# Clean test build directory
+test-clean:
+	@echo "Cleaning test build directory..."
+	rm -rf $(TEST_BUILD_DIR)
+
+# Hook into automake's clean target
+clean-local: test-clean
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

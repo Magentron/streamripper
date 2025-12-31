@@ -449,7 +449,11 @@ compose_metadata(RIP_MANAGER_INFO *rmi, TRACK_INFO *ti) {
 	    CODESET_RELAY);
 	ti->composed_metadata[MAX_METADATA_LEN] = 0; // note, not LEN-1
 	num_16_bytes = (num_bytes + 15) / 16;
-	ti->composed_metadata[0] = num_16_bytes;
+	if (num_16_bytes > 255) {
+		num_16_bytes = 255;  /* Truncate to max unsigned char value */
+		debug_printf("Warning: metadata length truncated to 255 blocks\n");
+	}
+	ti->composed_metadata[0] = (unsigned char)num_16_bytes;
 }
 
 void

@@ -1,3 +1,10 @@
+New for 1.67.2
+------------------------------------
+* Fix critical security vulnerabilities (buffer overflows, format strings,
+  TOCTOU races, NULL checks, resource leaks, command injection, integer
+  overflow, logic errors)
+* Add security regression tests
+
 New for 1.67.1
 ------------------------------------
 * Add downstream patch to fix buffer size

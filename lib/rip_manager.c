@@ -99,6 +99,9 @@ rip_manager_start(
 	}
 
 	rmi = (*rmip) = (RIP_MANAGER_INFO *)malloc(sizeof(RIP_MANAGER_INFO));
+	if (!rmi) {
+		return SR_ERROR_CANT_ALLOC_MEMORY;
+	}
 	memset(rmi, 0, sizeof(RIP_MANAGER_INFO));
 	rmi->prefs = prefs;
 
@@ -115,6 +118,9 @@ rip_manager_start(
 #if __UNIX__
 	rc = pipe(rmi->abort_pipe);
 	if (rc != 0) {
+		threadlib_destroy_sem(&rmi->started_sem);
+		free(rmi);
+		*rmip = NULL;
 		return SR_ERROR_CREATE_PIPE_FAILED;
 	}
 #endif
