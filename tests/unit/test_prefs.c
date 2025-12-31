@@ -288,8 +288,8 @@ static void test_global_prefs_structure(void)
 
     memset(&global_prefs, 0, sizeof(GLOBAL_PREFS));
 
-    strncpy(global_prefs.version, "1.67.1", MAX_VERSION_LEN);
-    TEST_ASSERT_EQUAL_STRING("1.67.1", global_prefs.version);
+    strncpy(global_prefs.version, "1.67.2", MAX_VERSION_LEN);
+    TEST_ASSERT_EQUAL_STRING("1.67.2", global_prefs.version);
 
     strncpy(global_prefs.url, "http://stream.example.com", MAX_URL_LEN);
     TEST_ASSERT_EQUAL_STRING("http://stream.example.com", global_prefs.url);

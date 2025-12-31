@@ -1,7 +1,4 @@
-.cproject
-.deps/
 /Makefile
-build/
 /.claude*
 /config.status
 /lib/Makefile
@@ -9,5 +6,10 @@ build/
 /lib/libstreamripper.a
 /lib/stamp-h1
 /streamripper
+.cproject
+.deps/
+*.backup
 *.cache/
+*.gcov
+build/
 stamp-h1

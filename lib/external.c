@@ -104,11 +104,14 @@ parse_external_byte(
 			ep->title_buf[0] = 0;
 			got_metadata = 1;
 		} else if (!strncmp("ARTIST=", ep->line_buf, strlen("ARTIST="))) {
-			strcpy(ep->artist_buf, &ep->line_buf[strlen("ARTIST=")]);
+			strncpy(ep->artist_buf, &ep->line_buf[strlen("ARTIST=")], sizeof(ep->artist_buf) - 1);
+			ep->artist_buf[sizeof(ep->artist_buf) - 1] = '\0';
 		} else if (!strncmp("ALBUM=", ep->line_buf, strlen("ALBUM="))) {
-			strcpy(ep->album_buf, &ep->line_buf[strlen("ALBUM=")]);
+			strncpy(ep->album_buf, &ep->line_buf[strlen("ALBUM=")], sizeof(ep->album_buf) - 1);
+			ep->album_buf[sizeof(ep->album_buf) - 1] = '\0';
 		} else if (!strncmp("TITLE=", ep->line_buf, strlen("TITLE="))) {
-			strcpy(ep->title_buf, &ep->line_buf[strlen("TITLE=")]);
+			strncpy(ep->title_buf, &ep->line_buf[strlen("TITLE=")], sizeof(ep->title_buf) - 1);
+			ep->title_buf[sizeof(ep->title_buf) - 1] = '\0';
 		}
 		ep->line_buf[0] = 0;
 		ep->line_buf_idx = 0;
@@ -299,7 +302,8 @@ spawn_external(char *cmd) {
 			i++;
 		}
 
-		execvp(argv[0], &argv[0]);
+		extern char **environ;
+		execve(argv[0], &argv[0], environ);
 		/* Doesn't return */
 		fprintf(stderr, "Error, returned from execlp\n");
 		exit(-1);

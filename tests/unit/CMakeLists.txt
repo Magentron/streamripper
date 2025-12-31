@@ -255,3 +255,19 @@ ADD_EXECUTABLE(test_relaylib ${TEST_RELAYLIB_SRC})
 TARGET_COMPILE_DEFINITIONS(test_relaylib PRIVATE RELAYLIB_TESTING=1)
 TARGET_LINK_LIBRARIES(test_relaylib ${GLIB_LIBRARIES} ${OPENSSL_LIBRARIES} pthread)
 ADD_TEST(NAME test_relaylib COMMAND test_relaylib)
+
+# ============================================================================
+# test_security_fixes - Regression tests for security fixes
+# ============================================================================
+# Note: These tests verify that security vulnerabilities remain fixed.
+# Tests buffer overflow protections, NULL checks, integer overflow guards,
+# strcmp logic fixes, and other security-critical code paths.
+SET(TEST_SECURITY_FIXES_SRC
+    test_security_fixes.c
+    ${LIB_DIR}/parse.c
+    ${LIB_DIR}/prefs.c
+    ${UNITY_SRC}
+)
+ADD_EXECUTABLE(test_security_fixes ${TEST_SECURITY_FIXES_SRC})
+TARGET_LINK_LIBRARIES(test_security_fixes ${GLIB_LIBRARIES} ${OPENSSL_LIBRARIES})
+ADD_TEST(NAME test_security_fixes COMMAND test_security_fixes)

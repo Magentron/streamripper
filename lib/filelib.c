@@ -193,26 +193,6 @@ filelib_init(
 	remove_trailing_periods(fli->m_stripped_icy_name);
 	debug_printf("  %s\n", fli->m_stripped_icy_name);
 
-	switch (content_type) {
-	case CONTENT_TYPE_MP3:
-		fli->m_extension = m_(".mp3");
-		break;
-	case CONTENT_TYPE_NSV:
-	case CONTENT_TYPE_ULTRAVOX:
-		fli->m_extension = m_(".nsv");
-		break;
-	case CONTENT_TYPE_OGG:
-		fli->m_extension = m_(".ogg");
-		break;
-	case CONTENT_TYPE_AAC:
-		fli->m_extension = m_(".aac");
-		break;
-	default:
-		fprintf(
-		    stderr, "Error (wrong suggested content type: %d)\n", content_type);
-		return SR_ERROR_PROGRAM_ERROR;
-	}
-
 	/* Initialize session date */
 	fill_date_buf(rmi, fli->m_session_datebuf, DATEBUF_LEN);
 

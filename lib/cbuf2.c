@@ -273,17 +273,20 @@ cbuf2_extract(
     u_long *curr_song) {
 	u_long frag1, frag2;
 
-	/* Don't need to lock this, only the ripping thread changes it. */
-	if (cbuf2->item_count < count) {
-		return SR_ERROR_BUFFER_EMPTY;
-	}
-
 	if (cbuf2->have_relay) {
 		debug_printf("Waiting for rmi->relay_list_sem\n");
 		threadlib_waitfor_sem(&rmi->relay_list_sem);
 	}
 	debug_printf("Waiting for cbuf2->cbuf_sem\n");
 	threadlib_waitfor_sem(&cbuf2->cbuf_sem);
+
+	if (cbuf2->item_count < count) {
+		threadlib_signal_sem(&cbuf2->cbuf_sem);
+		if (cbuf2->have_relay) {
+			threadlib_signal_sem(&rmi->relay_list_sem);
+		}
+		return SR_ERROR_BUFFER_EMPTY;
+	}
 	cbuf2_get_used_fragments(cbuf2, &frag1, &frag2);
 	if (frag1 >= count) {
 		memcpy(data, &cbuf2->buf[cbuf2->base_idx], count);
@@ -333,11 +336,11 @@ error_code
 cbuf2_peek(CBUF2 *cbuf2, char *data, u_long count) {
 	u_long frag1, frag2;
 
+	threadlib_waitfor_sem(&cbuf2->cbuf_sem);
 	if (cbuf2->item_count < count) {
+		threadlib_signal_sem(&cbuf2->cbuf_sem);
 		return SR_ERROR_BUFFER_EMPTY;
 	}
-
-	threadlib_waitfor_sem(&cbuf2->cbuf_sem);
 	cbuf2_get_used_fragments(cbuf2, &frag1, &frag2);
 	if (frag1 >= count) {
 		memcpy(data, &cbuf2->buf[cbuf2->base_idx], count);

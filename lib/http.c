@@ -264,11 +264,12 @@ http_construct_sc_request(
 		return ret;
 
 	if (proxyurl) {
-		sprintf(myurl, "http://%s:%d%s", ui.host, ui.port, ui.path);
+		snprintf(myurl, sizeof(myurl), "http://%s:%d%s", ui.host, ui.port, ui.path);
 		if ((ret = http_parse_url(proxyurl, &proxyui)) != SR_SUCCESS)
 			return ret;
 	} else {
-		strcpy(myurl, ui.path);
+		strncpy(myurl, ui.path, sizeof(myurl) - 1);
+		myurl[sizeof(myurl) - 1] = '\0';
 	}
 
 	if (rmi->prefs->http10) {
@@ -339,11 +340,13 @@ http_construct_sc_request(
 static char *
 make_auth_header(
     const char *header_name, const char *username, const char *password) {
-	char *authbuf = malloc(
-	    strlen(header_name) + strlen(username) + strlen(password)
-	    + MAX_URI_STRING);
+	size_t authbuf_size = strlen(header_name) + strlen(username) + strlen(password) + MAX_URI_STRING;
+	char *authbuf = malloc(authbuf_size);
 	char *auth64;
-	sprintf(authbuf, "%s:%s", username, password);
+	if (!authbuf) {
+		return NULL;
+	}
+	snprintf(authbuf, strlen(username) + strlen(password) + 2, "%s:%s", username, password);
 	auth64 = b64enc(authbuf, strlen(authbuf));
 	sprintf(authbuf, "%s: Basic %s\r\n", header_name, auth64);
 	free(auth64);
@@ -360,9 +363,11 @@ http_construct_page_request(const char *url, BOOL proxyformat, char *buffer) {
 		return ret;
 
 	if (proxyformat)
-		sprintf(myurl, "http://%s:%d%s", ui.host, ui.port, ui.path);
-	else
-		strcpy(myurl, ui.path);
+		snprintf(myurl, sizeof(myurl), "http://%s:%d%s", ui.host, ui.port, ui.path);
+	else {
+		strncpy(myurl, ui.path, sizeof(myurl) - 1);
+		myurl[sizeof(myurl) - 1] = '\0';
+	}
 
 	snprintf(
 	    buffer,
@@ -425,8 +430,12 @@ http_parse_sc_header(const char *url, char *header, SR_HTTP_HEADER *info) {
 			return SR_ERROR_NO_RESPONSE_HEADER;
 		}
 	}
-    start = strstr (start, " ") + 1;
-    sscanf (start, "%i", &info->icy_code);
+    start = strstr(start, " ");
+    if (!start) {
+        return SR_ERROR_NO_RESPONSE_HEADER;
+    }
+    start++;
+    sscanf(start, "%i", &info->icy_code);
     if (info->icy_code >= 400) {
 	switch (info->icy_code) {
 	case 400:
@@ -523,14 +532,16 @@ http_parse_sc_header(const char *url, char *header, SR_HTTP_HEADER *info) {
 
     // Check for Streamripper relay
     if ((start = (char *)strstr(header, "[relay stream]")) != NULL) {
-	strcpy(info->server, "Streamripper relay server");
+	strncpy(info->server, "Streamripper relay server", sizeof(info->server) - 1);
+	info->server[sizeof(info->server) - 1] = '\0';
     }
     // Check for Shoutcast
     else if ((start = (char *)strstr(header, "SHOUTcast")) != NULL) {
-	strcpy(info->server, "SHOUTcast/");
+	strncpy(info->server, "SHOUTcast/", sizeof(info->server) - 1);
+	info->server[sizeof(info->server) - 1] = '\0';
 	if ((start = (char *)strstr(start, "Server/")) != NULL) {
 	    sscanf(start, "Server/%63[^<]<", versionbuf);
-	    strcat(info->server, versionbuf);
+	    strncat(info->server, versionbuf, sizeof(info->server) - strlen(info->server) - 1);
 	}
     }
 
@@ -607,14 +618,16 @@ http_parse_sc_header(const char *url, char *header, SR_HTTP_HEADER *info) {
 
 	// Check for Streamripper relay
 	if ((start = (char *)strstr(header, "[relay stream]")) != NULL) {
-		strcpy(info->server, "Streamripper relay server");
+		strncpy(info->server, "Streamripper relay server", sizeof(info->server) - 1);
+		info->server[sizeof(info->server) - 1] = '\0';
 	}
 	// Check for Shoutcast
 	else if ((start = (char *)strstr(header, "SHOUTcast")) != NULL) {
-		strcpy(info->server, "SHOUTcast/");
+		strncpy(info->server, "SHOUTcast/", sizeof(info->server) - 1);
+		info->server[sizeof(info->server) - 1] = '\0';
 		if ((start = (char *)strstr(start, "Server/")) != NULL) {
 			sscanf(start, "Server/%63[^<]<", versionbuf);
-			strcat(info->server, versionbuf);
+			strncat(info->server, versionbuf, sizeof(info->server) - strlen(info->server) - 1);
 		}
 
 	}
@@ -633,10 +646,11 @@ http_parse_sc_header(const char *url, char *header, SR_HTTP_HEADER *info) {
 	// Check for Icecast 1
 	else if ((start = (char *)strstr(header, "icecast")) != NULL) {
 		if (!info->server[0]) {
-			strcpy(info->server, "icecast/");
+			strncpy(info->server, "icecast/", sizeof(info->server) - 1);
+			info->server[sizeof(info->server) - 1] = '\0';
 			if ((start = (char *)strstr(start, "version ")) != NULL) {
 				sscanf(start, "version %63[^<]<", versionbuf);
-				strcat(info->server, versionbuf);
+				strncat(info->server, versionbuf, sizeof(info->server) - strlen(info->server) - 1);
 			}
 		}
 

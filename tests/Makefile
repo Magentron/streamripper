@@ -57,14 +57,27 @@ test-verbose: build
 coverage: build-coverage
 	@cd $(BUILD_DIR) && ctest --output-on-failure
 	@if command -v lcov > /dev/null; then \
+		( \
+			cd $(BUILD_DIR) && \
+			lcov --capture --directory . --output-file coverage.info; \
+		) && \
+		make coverage-html; \
+	else \
+		 echo "error: lcov not installed"; \
+		 exit 1; \
+	fi
+
+# Generate code coverage HTML report from code coverage info
+coverage-html:	$(BUILD_DIR)/coverage.info
+	@if command -v lcov > /dev/null; then \
 		cd $(BUILD_DIR) && \
-		lcov --capture --directory . --output-file coverage.info && \
-		lcov --remove coverage.info '/usr/*' '*/vendor/*' '*/tests/*' --output-file coverage.info && \
+		lcov --ignore-errors unused --remove coverage.info '/usr/*' '*/vendor/*' --output-file coverage.info && \
 		genhtml coverage.info --output-directory coverage_html && \
 		echo "Coverage report: $(BUILD_DIR)/coverage_html/index.html"; \
-	else \
-		echo "lcov not installed. Install with: sudo apt install lcov"; \
-	fi
+	 else \
+		 echo "error: lcov not installed"; \
+		 exit 1; \
+	 fi
 
 # List all available tests
 list:

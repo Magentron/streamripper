@@ -8,12 +8,12 @@ The test suite is organized into three levels:
 
 | Level | Directory | Description | Test Count |
 |-------|-----------|-------------|------------|
-| Unit | `unit/` | Isolated module tests with mocked dependencies | 17 |
+| Unit | `unit/` | Isolated module tests with mocked dependencies | 18 |
 | HTTP | `http_test/` | Comprehensive HTTP protocol tests | 165 |
 | Integration | `integration/` | Component interaction tests across modules | 4 |
 | E2E | `e2e/` | End-to-end tests with mock HTTP server | 3 |
 
-**Total Tests: 189** (24 CTest suites + 165 http_test cases)
+**Total Tests: 190** (26 CTest suites + 165 http_test cases)
 
 ## Directory Structure
 
@@ -46,6 +46,7 @@ tests/
 │   ├── test_relaylib.c     # Relay server tests
 │   ├── test_ripaac.c       # AAC format parsing tests
 │   ├── test_ripogg.c       # OGG/Vorbis format tests
+│   ├── test_security_fixes.c # Security regression tests
 │   ├── test_socklib.c      # Socket library tests
 │   ├── test_threadlib.c    # Thread library tests
 │   └── test_utf8.c         # UTF-8 encoding/decoding tests
@@ -153,7 +154,7 @@ ctest -V --output-on-failure
 
 ### Current Coverage Results
 
-**Overall: 85.9% line coverage, 96.7% function coverage**
+**Overall: 86.3% line coverage, 96.7% function coverage**
 
 | File | Line Coverage | Function Coverage |
 |------|---------------|-------------------|
@@ -310,7 +311,7 @@ static void test_function_scenario(void)
 
 ## Test Suites
 
-### Unit Tests (17 test suites)
+### Unit Tests (18 test suites)
 
 | Test | Module | Description |
 |------|--------|-------------|
@@ -328,6 +329,7 @@ static void test_function_scenario(void)
 | test_relaylib | relaylib.c | Relay server socket operations |
 | test_ripaac | ripaac.c | AAC audio format parsing |
 | test_ripogg | ripogg.c | OGG/Vorbis format parsing |
+| test_security_fixes | multiple | Security vulnerability regression tests |
 | test_socklib | socklib.c | Low-level socket operations |
 | test_threadlib | threadlib.c | Thread and semaphore operations |
 | test_utf8 | utf8.c | UTF-8 encoding and decoding |
