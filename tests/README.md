@@ -8,11 +8,12 @@ The test suite is organized into three levels:
 
 | Level | Directory | Description | Test Count |
 |-------|-----------|-------------|------------|
-| Unit | `unit/` | Isolated module tests with mocked dependencies | 14 |
+| Unit | `unit/` | Isolated module tests with mocked dependencies | 17 |
+| HTTP | `http_test/` | Comprehensive HTTP protocol tests | 165 |
 | Integration | `integration/` | Component interaction tests across modules | 4 |
 | E2E | `e2e/` | End-to-end tests with mock HTTP server | 3 |
 
-**Total Tests: 21**
+**Total Tests: 189** (24 CTest suites + 165 http_test cases)
 
 ## Directory Structure
 
@@ -26,23 +27,28 @@ tests/
 ├── test_helpers.h          # Common test utilities and macros
 ├── mocks/                  # Generated mock files
 ├── fixtures/               # Test fixtures (sample data)
-├── http_test/              # Legacy HTTP tests (kept for compatibility)
-├── unit/                   # Unit tests
+├── http_test/              # Comprehensive HTTP protocol tests (165 tests)
 │   ├── CMakeLists.txt
-│   ├── test_charset.c      # Character set conversion tests
-│   ├── test_utf8.c         # UTF-8 encoding/decoding tests
-│   ├── test_errors.c       # Error handling tests
-│   ├── test_debug.c        # Debug output tests
-│   ├── test_mchar.c        # Multi-byte character tests
-│   ├── test_filelib.c      # File operations tests
-│   ├── test_prefs.c        # Preferences handling tests
-│   ├── test_parse.c        # Metadata parsing tests
-│   ├── test_https.c        # HTTPS connection tests
-│   ├── test_socklib.c      # Socket library tests
+│   └── http_test.c         # URL parsing, headers, requests, playlists
+├── unit/                   # Unit tests (17 test suites)
+│   ├── CMakeLists.txt
 │   ├── test_cbuf2.c        # Circular buffer tests
+│   ├── test_charset.c      # Character set conversion tests
+│   ├── test_debug.c        # Debug output tests
+│   ├── test_errors.c       # Error handling tests
+│   ├── test_external.c     # External command execution tests
+│   ├── test_filelib.c      # File operations tests
 │   ├── test_findsep.c      # Silence/separator detection tests
+│   ├── test_https.c        # HTTPS connection tests
+│   ├── test_mchar.c        # Multi-byte character tests
+│   ├── test_parse.c        # Metadata parsing tests
+│   ├── test_prefs.c        # Preferences handling tests
+│   ├── test_relaylib.c     # Relay server tests
 │   ├── test_ripaac.c       # AAC format parsing tests
-│   └── test_ripogg.c       # OGG/Vorbis format tests
+│   ├── test_ripogg.c       # OGG/Vorbis format tests
+│   ├── test_socklib.c      # Socket library tests
+│   ├── test_threadlib.c    # Thread library tests
+│   └── test_utf8.c         # UTF-8 encoding/decoding tests
 ├── integration/            # Integration tests
 │   ├── CMakeLists.txt
 │   ├── test_streaming_pipeline.c
@@ -144,6 +150,31 @@ ctest -V --output-on-failure
 ```
 
 ## Code Coverage
+
+### Current Coverage Results
+
+**Overall: 85.9% line coverage, 96.7% function coverage**
+
+| File | Line Coverage | Function Coverage |
+|------|---------------|-------------------|
+| errors.c | 100.0% | 100.0% |
+| threadlib.c | 100.0% | 100.0% |
+| list.h | 100.0% | 100.0% |
+| utf8.c | 96.4% | 100.0% |
+| charset.c | 95.1% | 100.0% |
+| cbuf2.c | 92.9% | 100.0% |
+| debug.c | 91.7% | 83.3% |
+| mchar.c | 91.7% | 100.0% |
+| parse.c | 90.7% | 100.0% |
+| external.c | 89.1% | 100.0% |
+| socklib.c | 88.8% | 100.0% |
+| prefs.c | 87.7% | 100.0% |
+| argv.c | 87.5% | 100.0% |
+| http.c | 83.5% | 85.7% |
+| filelib.c | 80.5% | 97.1% |
+| relaylib.c | 61.6%* | 78.6% |
+
+*relaylib.c contains thread functions (`thread_accept`, `thread_send`) with infinite loops that require integration tests to cover.
 
 ### Using the Coverage Script (Recommended)
 
@@ -279,24 +310,38 @@ static void test_function_scenario(void)
 
 ## Test Suites
 
-### Unit Tests (14 tests)
+### Unit Tests (17 test suites)
 
 | Test | Module | Description |
 |------|--------|-------------|
-| test_errors | errors.c | Error code handling and messages |
-| test_mchar | mchar.c | Multi-byte character operations |
-| test_debug | debug.c | Debug output and logging |
-| test_charset | charset.c | Character set detection and conversion |
-| test_utf8 | utf8.c | UTF-8 encoding and decoding |
-| test_filelib | filelib.c | File operations and path handling |
-| test_prefs | prefs.c | Preferences parsing and storage |
-| test_parse | parse.c | Metadata parsing with rules |
-| test_https | https.c | HTTPS/SSL connection handling |
-| test_socklib | socklib.c | Low-level socket operations |
 | test_cbuf2 | cbuf2.c | Circular buffer implementation |
+| test_charset | charset.c | Character set detection and conversion |
+| test_debug | debug.c | Debug output and logging |
+| test_errors | errors.c | Error code handling and messages |
+| test_external | external.c, argv.c | External command execution |
+| test_filelib | filelib.c | File operations and path handling |
 | test_findsep | findsep.c | Silence and track separator detection |
+| test_https | https.c | HTTPS/SSL connection handling |
+| test_mchar | mchar.c | Multi-byte character operations |
+| test_parse | parse.c | Metadata parsing with rules |
+| test_prefs | prefs.c | Preferences parsing and storage |
+| test_relaylib | relaylib.c | Relay server socket operations |
 | test_ripaac | ripaac.c | AAC audio format parsing |
 | test_ripogg | ripogg.c | OGG/Vorbis format parsing |
+| test_socklib | socklib.c | Low-level socket operations |
+| test_threadlib | threadlib.c | Thread and semaphore operations |
+| test_utf8 | utf8.c | UTF-8 encoding and decoding |
+
+### HTTP Tests (165 tests)
+
+| Category | Description |
+|----------|-------------|
+| URL Parsing | Protocol, host, port, path, credentials extraction |
+| Header Parsing | ICY/HTTP headers, content types, metadata intervals |
+| Request Construction | Stream requests, page requests, proxy support |
+| Response Construction | ICY responses with metadata support |
+| Playlist Parsing | PLS and M3U playlist formats |
+| Error Handling | HTTP status codes, connection errors |
 
 ### Integration Tests (4 tests)
 

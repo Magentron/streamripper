@@ -309,6 +309,398 @@ static void test_ogg_init_empty_list(void)
     TEST_ASSERT_EQUAL(&page_list, page_list.prev);
 }
 
+/* Test: list_add adds at head */
+static void test_list_add_at_head(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+
+    /* Add page1 first, then page2 at head */
+    list_add(&page1.m_list, &head);
+    list_add(&page2.m_list, &head);
+
+    /* page2 should be first (at head) */
+    OGG_PAGE_LIST *first = list_entry(head.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(200, first->m_page_start);
+
+    /* page1 should be second */
+    OGG_PAGE_LIST *second = list_entry(head.next->next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(100, second->m_page_start);
+}
+
+/* Test: list_del removes entry from list */
+static void test_list_del(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2, page3;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+    list_add_tail(&page3.m_list, &head);
+
+    /* Remove middle element */
+    list_del(&page2.m_list);
+
+    /* Now page1 should link directly to page3 */
+    OGG_PAGE_LIST *first = list_entry(head.next, OGG_PAGE_LIST, m_list);
+    OGG_PAGE_LIST *second_after_del = list_entry(head.next->next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(100, first->m_page_start);
+    TEST_ASSERT_EQUAL(300, second_after_del->m_page_start);
+}
+
+/* Test: list_del_init removes and reinitializes entry */
+static void test_list_del_init(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+
+    /* Remove and reinit page1 */
+    list_del_init(&page1.m_list);
+
+    /* page1's list should point to itself */
+    TEST_ASSERT_EQUAL(&page1.m_list, page1.m_list.next);
+    TEST_ASSERT_EQUAL(&page1.m_list, page1.m_list.prev);
+
+    /* Only page2 should remain in head */
+    OGG_PAGE_LIST *only = list_entry(head.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(200, only->m_page_start);
+}
+
+/* Test: list_move moves entry to another list's head */
+static void test_list_move(void)
+{
+    LIST head1, head2;
+    OGG_PAGE_LIST page1, page2;
+
+    INIT_LIST_HEAD(&head1);
+    INIT_LIST_HEAD(&head2);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+
+    list_add_tail(&page1.m_list, &head1);
+    list_add_tail(&page2.m_list, &head2);
+
+    /* Move page1 from head1 to head2 (at head) */
+    list_move(&page1.m_list, &head2);
+
+    /* head1 should be empty */
+    TEST_ASSERT_TRUE(list_empty(&head1));
+
+    /* head2 should have page1 at head, page2 at tail */
+    OGG_PAGE_LIST *first = list_entry(head2.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(100, first->m_page_start);
+}
+
+/* Test: list_move_tail moves entry to another list's tail */
+static void test_list_move_tail(void)
+{
+    LIST head1, head2;
+    OGG_PAGE_LIST page1, page2;
+
+    INIT_LIST_HEAD(&head1);
+    INIT_LIST_HEAD(&head2);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+
+    list_add_tail(&page1.m_list, &head1);
+    list_add_tail(&page2.m_list, &head2);
+
+    /* Move page1 from head1 to head2 (at tail) */
+    list_move_tail(&page1.m_list, &head2);
+
+    /* head1 should be empty */
+    TEST_ASSERT_TRUE(list_empty(&head1));
+
+    /* head2 should have page2 at head, page1 at tail */
+    OGG_PAGE_LIST *first = list_entry(head2.next, OGG_PAGE_LIST, m_list);
+    OGG_PAGE_LIST *last = list_entry(head2.prev, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(200, first->m_page_start);
+    TEST_ASSERT_EQUAL(100, last->m_page_start);
+}
+
+/* Test: list_splice joins two lists */
+static void test_list_splice(void)
+{
+    LIST head1, head2;
+    OGG_PAGE_LIST page1, page2, page3;
+
+    INIT_LIST_HEAD(&head1);
+    INIT_LIST_HEAD(&head2);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head1);
+    list_add_tail(&page2.m_list, &head2);
+    list_add_tail(&page3.m_list, &head2);
+
+    /* Splice head2 into head1 */
+    list_splice(&head2, &head1);
+
+    /* Now head1 should have: page2, page3, page1 (splice adds at head) */
+    OGG_PAGE_LIST *first = list_entry(head1.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(200, first->m_page_start);
+}
+
+/* Test: list_splice with empty list does nothing */
+static void test_list_splice_empty(void)
+{
+    LIST head1, head2;
+    OGG_PAGE_LIST page1;
+
+    INIT_LIST_HEAD(&head1);
+    INIT_LIST_HEAD(&head2);
+    memset(&page1, 0, sizeof(page1));
+
+    page1.m_page_start = 100;
+    list_add_tail(&page1.m_list, &head1);
+
+    /* Splice empty head2 into head1 - should do nothing */
+    list_splice(&head2, &head1);
+
+    OGG_PAGE_LIST *first = list_entry(head1.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(100, first->m_page_start);
+}
+
+/* Test: list_splice_init joins lists and reinits source */
+static void test_list_splice_init(void)
+{
+    LIST head1, head2;
+    OGG_PAGE_LIST page1, page2;
+
+    INIT_LIST_HEAD(&head1);
+    INIT_LIST_HEAD(&head2);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+
+    list_add_tail(&page1.m_list, &head1);
+    list_add_tail(&page2.m_list, &head2);
+
+    /* Splice head2 into head1 and reinit head2 */
+    list_splice_init(&head2, &head1);
+
+    /* head2 should be empty (reinitialized) */
+    TEST_ASSERT_TRUE(list_empty(&head2));
+}
+
+/* Test: list_splice_init with empty source */
+static void test_list_splice_init_empty(void)
+{
+    LIST head1, head2;
+    OGG_PAGE_LIST page1;
+
+    INIT_LIST_HEAD(&head1);
+    INIT_LIST_HEAD(&head2);
+    memset(&page1, 0, sizeof(page1));
+
+    page1.m_page_start = 100;
+    list_add_tail(&page1.m_list, &head1);
+
+    /* Splice empty head2 - should do nothing */
+    list_splice_init(&head2, &head1);
+
+    /* head1 should still have page1 */
+    TEST_ASSERT_FALSE(list_empty(&head1));
+    OGG_PAGE_LIST *first = list_entry(head1.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(100, first->m_page_start);
+}
+
+/* Test: list_for_each iteration */
+static void test_list_for_each(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2, page3;
+    struct list_head *pos;
+    int count = 0;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+    list_add_tail(&page3.m_list, &head);
+
+    /* Count entries using list_for_each */
+    list_for_each(pos, &head) {
+        count++;
+    }
+
+    TEST_ASSERT_EQUAL(3, count);
+}
+
+/* Test: list_for_each_prev backward iteration */
+static void test_list_for_each_prev(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2, page3;
+    struct list_head *pos;
+    int last_value = 0;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+    list_add_tail(&page3.m_list, &head);
+
+    /* First entry from prev should be page3 (the last added) */
+    list_for_each_prev(pos, &head) {
+        OGG_PAGE_LIST *entry = list_entry(pos, OGG_PAGE_LIST, m_list);
+        last_value = entry->m_page_start;
+        break; /* Just get first (which is last in forward order) */
+    }
+
+    TEST_ASSERT_EQUAL(300, last_value);
+}
+
+/* Test: list_for_each_safe allows deletion during iteration */
+static void test_list_for_each_safe(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2, page3;
+    struct list_head *pos, *n;
+    int count = 0;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+    list_add_tail(&page3.m_list, &head);
+
+    /* Delete all entries during iteration */
+    list_for_each_safe(pos, n, &head) {
+        list_del(pos);
+        count++;
+    }
+
+    TEST_ASSERT_EQUAL(3, count);
+    TEST_ASSERT_TRUE(list_empty(&head));
+}
+
+/* Test: list_for_each_entry iteration with type */
+static void test_list_for_each_entry(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2, page3;
+    OGG_PAGE_LIST *entry;
+    int sum = 0;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+    list_add_tail(&page3.m_list, &head);
+
+    /* Sum all page_start values */
+    list_for_each_entry(entry, OGG_PAGE_LIST, &head, m_list) {
+        sum += entry->m_page_start;
+    }
+
+    TEST_ASSERT_EQUAL(600, sum);
+}
+
+/* Test: list_for_each_entry_safe allows deletion */
+static void test_list_for_each_entry_safe(void)
+{
+    LIST head;
+    OGG_PAGE_LIST page1, page2, page3;
+    OGG_PAGE_LIST *entry, *tmp;
+    int count = 0;
+
+    INIT_LIST_HEAD(&head);
+    memset(&page1, 0, sizeof(page1));
+    memset(&page2, 0, sizeof(page2));
+    memset(&page3, 0, sizeof(page3));
+
+    page1.m_page_start = 100;
+    page2.m_page_start = 200;
+    page3.m_page_start = 300;
+
+    list_add_tail(&page1.m_list, &head);
+    list_add_tail(&page2.m_list, &head);
+    list_add_tail(&page3.m_list, &head);
+
+    /* Delete entries with page_start >= 200 */
+    list_for_each_entry_safe(entry, OGG_PAGE_LIST, tmp, &head, m_list) {
+        if (entry->m_page_start >= 200) {
+            list_del(&entry->m_list);
+            count++;
+        }
+    }
+
+    TEST_ASSERT_EQUAL(2, count);  /* Deleted page2 and page3 */
+
+    /* Only page1 should remain */
+    TEST_ASSERT_FALSE(list_empty(&head));
+    OGG_PAGE_LIST *first = list_entry(head.next, OGG_PAGE_LIST, m_list);
+    TEST_ASSERT_EQUAL(100, first->m_page_start);
+}
+
 /* Test: Add pages to list */
 static void test_ogg_add_pages_to_list(void)
 {
@@ -495,6 +887,20 @@ int main(int argc, char **argv)
 
     /* List Operations Tests */
     RUN_TEST(test_ogg_init_empty_list);
+    RUN_TEST(test_list_add_at_head);
+    RUN_TEST(test_list_del);
+    RUN_TEST(test_list_del_init);
+    RUN_TEST(test_list_move);
+    RUN_TEST(test_list_move_tail);
+    RUN_TEST(test_list_splice);
+    RUN_TEST(test_list_splice_empty);
+    RUN_TEST(test_list_splice_init);
+    RUN_TEST(test_list_splice_init_empty);
+    RUN_TEST(test_list_for_each);
+    RUN_TEST(test_list_for_each_prev);
+    RUN_TEST(test_list_for_each_safe);
+    RUN_TEST(test_list_for_each_entry);
+    RUN_TEST(test_list_for_each_entry_safe);
     RUN_TEST(test_ogg_add_pages_to_list);
 
     /* CBUF2 OGG Support Tests */

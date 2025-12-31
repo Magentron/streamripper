@@ -4,15 +4,18 @@
 #include <unity.h>
 
 #include "utf8.h"
+#include "charset_test_helper.h"
 
 void setUp(void)
 {
-    /* No special setup needed */
+    /* Clear any error injection before each test */
+    charset_convert_clear_error();
 }
 
 void tearDown(void)
 {
-    /* Nothing to tear down */
+    /* Clear error injection after each test */
+    charset_convert_clear_error();
 }
 
 /* =================================================================
@@ -331,6 +334,280 @@ static void test_utf8_decode_orphan_continuation(void)
 }
 
 /* =================================================================
+ * Additional edge case tests to maximize coverage
+ * ================================================================= */
+
+static void test_utf8_decode_del_char(void)
+{
+    char *output = NULL;
+    /* DEL character (0x7F) - highest ASCII value */
+    const char input[] = {0x7F, 0};
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL(0x7F, output[0]);
+
+    free(output);
+}
+
+static void test_utf8_decode_boundary_ascii(void)
+{
+    char *output = NULL;
+    /* Test boundary between ASCII and non-ASCII */
+    const char input[] = {'~', 0x7F, 0};  /* Last two ASCII chars */
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL('~', output[0]);
+    TEST_ASSERT_EQUAL(0x7F, output[1]);
+
+    free(output);
+}
+
+static void test_utf8_decode_first_non_ascii_byte(void)
+{
+    char *output = NULL;
+    /* 0x80 - First non-ASCII byte, but invalid as UTF-8 lead */
+    const char input[] = {(char)0x80, 0};
+
+    int result = utf8_decode(input, &output);
+
+    /* Should still succeed (with replacement) */
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+
+    free(output);
+}
+
+static void test_utf8_decode_all_low_ascii(void)
+{
+    char *output = NULL;
+    /* Test control characters 1-31 */
+    char input[33];
+    for (int i = 0; i < 31; i++) {
+        input[i] = (char)(i + 1);
+    }
+    input[31] = 0;
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL(31, strlen(output));
+
+    free(output);
+}
+
+static void test_utf8_decode_very_long_string(void)
+{
+    char *output = NULL;
+    /* Test with a longer string to ensure no buffer issues */
+    char input[1001];
+    for (int i = 0; i < 1000; i++) {
+        input[i] = 'A' + (i % 26);
+    }
+    input[1000] = 0;
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL(1000, strlen(output));
+
+    free(output);
+}
+
+static void test_utf8_decode_alternating_ascii_nonascii(void)
+{
+    char *output = NULL;
+    /* Alternating ASCII and non-ASCII */
+    const char input[] = {'a', (char)0xC3, (char)0xA9, 'b', (char)0xC3, (char)0xA9, 'c', 0};
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    /* "a" + "?" + "b" + "?" + "c" = 5 chars */
+    TEST_ASSERT_EQUAL(5, strlen(output));
+
+    free(output);
+}
+
+static void test_utf8_decode_only_high_bytes(void)
+{
+    char *output = NULL;
+    /* String with only non-ASCII UTF-8 characters */
+    const char input[] = {(char)0xC3, (char)0xA9, (char)0xC3, (char)0xA8, (char)0xC3, (char)0xA0, 0};
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    /* Should be "???" after replacement */
+    TEST_ASSERT_EQUAL_STRING("???", output);
+
+    free(output);
+}
+
+static void test_utf8_decode_incomplete_at_end(void)
+{
+    char *output = NULL;
+    /* String ending with incomplete UTF-8 sequence */
+    const char input[] = {'a', 'b', 'c', (char)0xC3, 0};
+
+    int result = utf8_decode(input, &output);
+
+    /* Should handle gracefully */
+    TEST_ASSERT_NOT_NULL(output);
+
+    free(output);
+}
+
+static void test_utf8_decode_exactly_one_char(void)
+{
+    char *output = NULL;
+    /* Single ASCII character */
+    const char input[] = {'Z', 0};
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL_STRING("Z", output);
+
+    free(output);
+}
+
+static void test_utf8_decode_exactly_one_multibyte(void)
+{
+    char *output = NULL;
+    /* Single multi-byte UTF-8 character */
+    const char input[] = {(char)0xC3, (char)0xBC, 0};  /* u with umlaut */
+
+    int result = utf8_decode(input, &output);
+
+    TEST_ASSERT_TRUE(result >= 0);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL_STRING("?", output);
+
+    free(output);
+}
+
+/* =================================================================
+ * Tests for error handling paths using error injection
+ * ================================================================= */
+
+/*
+ * Test that exercises the memory allocation failure path (ret == -2)
+ * in convert_string when convert_buffer returns -2
+ *
+ * This test uses error injection to simulate charset_convert returning -2
+ * (memory allocation failure), which should cause utf8_decode to
+ * return -1 immediately (line 285 in utf8.c)
+ */
+static void test_utf8_decode_memory_allocation_failure(void)
+{
+    char *output = NULL;
+    const char *input = "test";
+
+    /* Inject error: simulate memory allocation failure */
+    charset_convert_set_error(-2);
+
+    int result = utf8_decode(input, &output);
+
+    /* Should return -1 on memory allocation failure */
+    TEST_ASSERT_EQUAL(-1, result);
+
+    charset_convert_clear_error();
+}
+
+/*
+ * Test that exercises the fallback path (lines 289-297) in convert_string
+ * when convert_buffer returns -1 (unknown encoding)
+ *
+ * This test uses error injection to simulate charset_convert returning -1,
+ * which triggers the fallback code that manually copies the string
+ * and replaces non-ASCII characters with '?'
+ */
+static void test_utf8_decode_fallback_on_conversion_failure(void)
+{
+    char *output = NULL;
+    /* String with non-ASCII character: 'caf' + accented e */
+    const char input[] = {'c', 'a', 'f', (char)0xC3, (char)0xA9, 0};
+
+    /* Inject error: simulate unknown encoding */
+    charset_convert_set_error(-1);
+
+    int result = utf8_decode(input, &output);
+
+    /* Should return 3 (fallback with replacement) */
+    TEST_ASSERT_EQUAL(3, result);
+    TEST_ASSERT_NOT_NULL(output);
+    /* UTF-8 bytes should be replaced with '?' in fallback */
+    /* Note: The fallback replaces bytes with high bit set, so both 0xC3 and 0xA9 */
+    TEST_ASSERT_EQUAL('c', output[0]);
+    TEST_ASSERT_EQUAL('a', output[1]);
+    TEST_ASSERT_EQUAL('f', output[2]);
+    TEST_ASSERT_EQUAL('?', output[3]);
+    TEST_ASSERT_EQUAL('?', output[4]);
+
+    free(output);
+    charset_convert_clear_error();
+}
+
+/*
+ * Test fallback path with pure ASCII string (no replacement needed)
+ * This ensures the fallback code works correctly when no non-ASCII
+ * characters need replacing
+ */
+static void test_utf8_decode_fallback_ascii_only(void)
+{
+    char *output = NULL;
+    const char *input = "Hello";
+
+    /* Inject error to trigger fallback */
+    charset_convert_set_error(-1);
+
+    int result = utf8_decode(input, &output);
+
+    /* Should return 3 (fallback used) but string unchanged */
+    TEST_ASSERT_EQUAL(3, result);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL_STRING("Hello", output);
+
+    free(output);
+    charset_convert_clear_error();
+}
+
+/*
+ * Test fallback path with all non-ASCII bytes
+ * Ensures the replacement loop handles strings with only high-bit characters
+ */
+static void test_utf8_decode_fallback_all_non_ascii(void)
+{
+    char *output = NULL;
+    /* All non-ASCII bytes */
+    const char input[] = {(char)0xFF, (char)0xFE, (char)0xFD, 0};
+
+    /* Inject error to trigger fallback */
+    charset_convert_set_error(-1);
+
+    int result = utf8_decode(input, &output);
+
+    /* Should return 3 (fallback with replacement) */
+    TEST_ASSERT_EQUAL(3, result);
+    TEST_ASSERT_NOT_NULL(output);
+    TEST_ASSERT_EQUAL_STRING("???", output);
+
+    free(output);
+    charset_convert_clear_error();
+}
+
+/* =================================================================
  * Main entry point
  * ================================================================= */
 
@@ -369,6 +646,24 @@ int main(int argc, char **argv)
     /* Invalid UTF-8 tests */
     RUN_TEST(test_utf8_decode_invalid_lead_byte);
     RUN_TEST(test_utf8_decode_orphan_continuation);
+
+    /* Additional edge case tests */
+    RUN_TEST(test_utf8_decode_del_char);
+    RUN_TEST(test_utf8_decode_boundary_ascii);
+    RUN_TEST(test_utf8_decode_first_non_ascii_byte);
+    RUN_TEST(test_utf8_decode_all_low_ascii);
+    RUN_TEST(test_utf8_decode_very_long_string);
+    RUN_TEST(test_utf8_decode_alternating_ascii_nonascii);
+    RUN_TEST(test_utf8_decode_only_high_bytes);
+    RUN_TEST(test_utf8_decode_incomplete_at_end);
+    RUN_TEST(test_utf8_decode_exactly_one_char);
+    RUN_TEST(test_utf8_decode_exactly_one_multibyte);
+
+    /* Error handling path tests using CMock */
+    RUN_TEST(test_utf8_decode_memory_allocation_failure);
+    RUN_TEST(test_utf8_decode_fallback_on_conversion_failure);
+    RUN_TEST(test_utf8_decode_fallback_ascii_only);
+    RUN_TEST(test_utf8_decode_fallback_all_non_ascii);
 
     return UNITY_END();
 }

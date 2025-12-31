@@ -58,20 +58,26 @@
 #endif
 
 /*****************************************************************************
- * Private functions
+ * Private functions - exposed for testing when RELAYLIB_TESTING is defined
  *****************************************************************************/
-static void thread_accept(void *arg);
-static error_code
+#ifdef RELAYLIB_TESTING
+#define STATIC_FOR_TESTING /* nothing - make visible for testing */
+#else
+#define STATIC_FOR_TESTING static
+#endif
+
+STATIC_FOR_TESTING void thread_accept(void *arg);
+STATIC_FOR_TESTING error_code
 try_port(RELAYLIB_INFO *rli, u_short port, char *if_name, char *relay_ip);
-static void thread_send(void *arg);
-static error_code relaylib_start_threads(RIP_MANAGER_INFO *rmi);
+STATIC_FOR_TESTING void thread_send(void *arg);
+STATIC_FOR_TESTING error_code relaylib_start_threads(RIP_MANAGER_INFO *rmi);
 
 #define BUFSIZE (1024)
 
 #define HTTP_HEADER_DELIM "\n"
 #define ICY_METADATA_TAG "Icy-MetaData:"
 
-static void
+STATIC_FOR_TESTING void
 destroy_all_hostsocks(RIP_MANAGER_INFO *rmi) {
 	RELAY_LIST *ptr;
 
@@ -91,7 +97,7 @@ destroy_all_hostsocks(RIP_MANAGER_INFO *rmi) {
 	threadlib_signal_sem(&rmi->relay_list_sem);
 }
 
-static int
+STATIC_FOR_TESTING int
 tag_compare(char *str, char *tag) {
 	int i, a, b;
 	int len;
@@ -107,7 +113,7 @@ tag_compare(char *str, char *tag) {
 	return 0;
 }
 
-static int
+STATIC_FOR_TESTING int
 header_receive(int sock, int *icy_metadata) {
 	fd_set fds;
 	struct timeval tv;
@@ -170,7 +176,7 @@ header_receive(int sock, int *icy_metadata) {
 // Quick function to "eat" incoming data from a socket
 // All data is discarded
 // Returns 0 if successful or SOCKET_ERROR if error
-static int
+STATIC_FOR_TESTING int
 swallow_receive(int sock) {
 	fd_set fds;
 	struct timeval tv;
@@ -318,7 +324,7 @@ relaylib_start(
 	return SR_ERROR_CANT_BIND_ON_PORT;
 }
 
-static error_code
+STATIC_FOR_TESTING error_code
 try_port(RELAYLIB_INFO *rli, u_short port, char *if_name, char *relay_ip) {
 	struct hostent *he;
 	struct sockaddr_in local;
@@ -407,7 +413,7 @@ relaylib_stop(RIP_MANAGER_INFO *rmi) {
 	debug_printf("relaylib_stop:done!\n");
 }
 
-static error_code
+STATIC_FOR_TESTING error_code
 relaylib_start_threads(RIP_MANAGER_INFO *rmi) {
 	int ret;
 	RELAYLIB_INFO *rli = &rmi->relaylib_info;
@@ -567,7 +573,7 @@ thread_accept(void *arg) {
 }
 
 /* Sock is ready to receive, so send it from cbuf to relay */
-static BOOL
+STATIC_FOR_TESTING BOOL
 send_to_relay(RIP_MANAGER_INFO *rmi, RELAY_LIST *ptr) {
 	int ret;
 	int err_errno;

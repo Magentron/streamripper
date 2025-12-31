@@ -171,6 +171,9 @@ error_code
 http_parse_url(const char *url, URLINFO *urlinfo) {
 	int ret;
 	char *s;
+	char *colon_pos;
+	char *slash_pos;
+	char *at_pos;
 	int default_port = 80;
 
 	debug_printf("http_parse_url: %s\n", url);
@@ -188,15 +191,28 @@ http_parse_url(const char *url, URLINFO *urlinfo) {
 	memcpy(urlinfo->path, (void *)"/\0", 2);
 
 	/* search for a login '@' token */
-	if (strchr(url, '@') != NULL) {
-		ret = sscanf(
-		    url, "%1023[^:]:%1023[^@]", urlinfo->username, urlinfo->password);
-		if (ret < 1) {
-			return SR_ERROR_PARSE_FAILURE;
-		} else if (ret == 1) {
+	at_pos = strchr(url, '@');
+	if (at_pos != NULL) {
+		/* Check if there's a colon before the @ (username:password format) */
+		colon_pos = strchr(url, ':');
+		if (colon_pos != NULL && colon_pos < at_pos) {
+			/* username:password@host format */
+			ret = sscanf(
+			    url, "%1023[^:]:%1023[^@]", urlinfo->username, urlinfo->password);
+			if (ret < 1) {
+				return SR_ERROR_PARSE_FAILURE;
+			} else if (ret == 1) {
+				urlinfo->password[0] = '\0';
+			}
+		} else {
+			/* username@host format (no password) */
+			ret = sscanf(url, "%1023[^@]", urlinfo->username);
+			if (ret < 1) {
+				return SR_ERROR_PARSE_FAILURE;
+			}
 			urlinfo->password[0] = '\0';
 		}
-		url = strchr(url, '@') + 1;
+		url = at_pos + 1;
 		debug_printf("Username (escaped): %s\n", urlinfo->username);
 		debug_printf("Password (escaped): %s\n", urlinfo->password);
 		unescape_pct_encoding(urlinfo->username);
@@ -208,8 +224,10 @@ http_parse_url(const char *url, URLINFO *urlinfo) {
 		urlinfo->password[0] = '\0';
 	}
 
-	/* search for a port seperator */
-	if (strchr(url, ':') != NULL) {
+	/* search for a port separator - only if colon appears before the first slash */
+	colon_pos = strchr(url, ':');
+	slash_pos = strchr(url, '/');
+	if (colon_pos != NULL && (slash_pos == NULL || colon_pos < slash_pos)) {
 		debug_printf("Branch 1 (%s)\n", url);
 		ret = sscanf(
 		    url,
@@ -530,6 +548,8 @@ http_parse_sc_header(const char *url, char *header, SR_HTTP_HEADER *info) {
 	info->have_icy_name = rc;
 	extract_header_value(
 	    header, info->icy_url, "icy-url:", sizeof(info->icy_url));
+	extract_header_value(
+	    header, info->icy_genre, "icy-genre:", sizeof(info->icy_genre));
 	rc = extract_header_value(header, stempbr, "icy-br:", sizeof(stempbr));
 	if (rc) {
 		info->icy_bitrate = atoi(stempbr);
